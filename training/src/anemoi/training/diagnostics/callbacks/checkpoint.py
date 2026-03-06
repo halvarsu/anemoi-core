@@ -7,7 +7,6 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
-
 import logging
 import time
 import uuid
@@ -195,6 +194,8 @@ class AnemoiCheckpoint(ModelCheckpoint):
 
             save_metadata(inference_checkpoint_filepath, metadata, supporting_arrays=supporting_arrays)
 
+            set_group_access(inference_checkpoint_filepath)
+
             model.config = save_config
             model.metadata = tmp_metadata
             model.supporting_arrays = tmp_supporting_arrays
@@ -205,6 +206,7 @@ class AnemoiCheckpoint(ModelCheckpoint):
 
         # saving checkpoint used for pytorch-lightning based training
         trainer.save_checkpoint(lightning_checkpoint_filepath, self.save_weights_only)
+        set_group_access(lightning_checkpoint_filepath)
 
         self._last_global_step_saved = trainer.global_step
         self._last_checkpoint_saved = lightning_checkpoint_filepath
@@ -227,6 +229,36 @@ class AnemoiCheckpoint(ModelCheckpoint):
 
                 save_metadata(lightning_checkpoint_filepath, metadata, supporting_arrays=supporting_arrays)
 
+                set_group_access(lightning_checkpoint_filepath)
+
             # notify loggers
             for logger in trainer.loggers:
                 logger.after_save_checkpoint(proxy(self))
+
+
+
+def set_group_access(path: str | Path) -> None:
+    """Set permissions so the group can read and write
+
+    Use after creating a file or directory so that group members can access it
+    even when the process umask would otherwise create owner-only permissions.
+
+    Parameters
+    ----------
+    path : str or Path
+        Path to an existing file or directory.
+    """
+
+    GROUP_READ_WRITE_FILE = 0o660   # rw-rw----
+    GROUP_READ_WRITE_EXEC_DIR = 0o770  # rwxrwx---
+    path = Path(path)
+    if not path.exists():
+        LOG.debug("Skipping chmod for non-existent path: %s", path)
+        return
+    try:
+        if path.is_dir():
+            path.chmod(GROUP_READ_WRITE_EXEC_DIR)
+        else:
+            path.chmod(GROUP_READ_WRITE_FILE)
+    except OSError as e:
+        LOG.warning("Could not set group access on %s: %s", path, e)
