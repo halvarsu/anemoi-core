@@ -10,6 +10,7 @@
 
 import datetime
 import logging
+import os
 from abc import ABC
 from abc import abstractmethod
 from functools import cached_property
@@ -60,6 +61,8 @@ class AnemoiTrainer(ABC):
             Config object from Hydra.
 
         """
+        # Ensure new files are group-readable
+        os.umask(0o007)
         # Allow for lower internal precision of float32 matrix multiplications.
         # This can increase performance (and TensorCore usage, where available).
         torch.set_float32_matmul_precision("high")
