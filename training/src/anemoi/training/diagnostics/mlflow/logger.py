@@ -784,4 +784,7 @@ class AnemoiMLflowLogger(BaseAnemoiMLflowLogger):
                     self.tracking_uri,
                 )
                 self.auth.authenticate()
-                health_check(self.tracking_uri)
+                if self.tracking_uri is not None and self.tracking_uri.startswith("sqlite://"):
+                    pass
+                else:
+                    health_check(self.tracking_uri)
