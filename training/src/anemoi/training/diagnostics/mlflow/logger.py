@@ -320,7 +320,10 @@ class AnemoiMLflowLogger(MLFlowLogger):
             else:
                 LOGGER.info("MLflow token authentication %s for %s", "enabled" if enabled else "disabled", tracking_uri)
                 self.auth.authenticate()
-                health_check(tracking_uri)
+                if self.tracking_uri is not None and self.tracking_uri.startswith("sqlite://"):
+                    pass
+                else:
+                    health_check(self.tracking_uri)
 
         run_id, run_name, tags = self._get_mlflow_run_params(
             project_name=project_name,
