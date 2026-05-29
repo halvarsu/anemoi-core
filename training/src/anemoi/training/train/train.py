@@ -58,6 +58,8 @@ class AnemoiTrainer:
         # Allow for lower internal precision of float32 matrix multiplications.
         # This can increase performance (and TensorCore usage, where available).
         torch.set_float32_matmul_precision("high")
+        # Force use of rocBLAS backend overriding the torch ≥ 2.7.0 default of hipBLASLt
+        torch.backends.cuda.preferred_blas_library("cublas")
         # Resolve the config to avoid shenanigans with lazy loading
 
         if config.config_validation:
